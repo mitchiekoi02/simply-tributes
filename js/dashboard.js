@@ -1,97 +1,144 @@
 const supabase = window.supabase.createClient(
   "https://gzcsahzxpohpuqwbigfn.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6Y3NhaHp4cG9ocHVxd2JpZ2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NzQ4NjcsImV4cCI6MjA5NjM1MDg2N30.RlKKTSZQ-GXVZtg8yG_AdnWtWI2EBWc4ujWhIqydPZc"
+  "YOUR_ANON_KEY"
 );
 
-let currentEdit = null;
-let siteData = {};
+/* =========================
+   CURRENT SLUG
+========================= */
+const slug = new URLSearchParams(location.search).get("slug") || "demo";
 
-/* UPLOAD */
-async function upload(bucket, file) {
+let tributeId = null;
 
-  const name = Date.now() + file.name;
+/* =========================
+   INIT
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+  loadTribute();
+  document.getElementById("saveBtn").addEventListener("click", saveAll);
+});
 
-  await supabase.storage.from(bucket).upload(name, file);
-
-  return supabase.storage.from(bucket).getPublicUrl(name).data.publicUrl;
-}
-
-/* LOAD LIST */
-async function loadMyTributes() {
-
-  const { data } = await supabase.from("tributes").select("*");
-
-  my-tributes-grid.innerHTML = "";
-
-  (data || []).forEach(t => {
-
-    const div = document.createElement("div");
-    div.innerHTML = `
-      <h3>${t.hero?.name || "Untitled"}</h3>
-      <button onclick="edit('${t.id}')">Edit</button>
-    `;
-
-    my-tributes-grid.appendChild(div);
-  });
-}
-
-/* EDIT */
-async function edit(id) {
+/* =========================
+   LOAD EXISTING DATA
+========================= */
+async function loadTribute() {
 
   const { data } = await supabase
     .from("tributes")
     .select("*")
-    .eq("id", id)
+    .eq("slug", slug)
     .single();
 
-  currentEdit = id;
-  siteData = data;
+  if (!data) return;
 
-  heroName.value = data.hero?.name || "";
-  heroDegree.value = data.hero?.degree || "";
-  heroSchool.value = data.hero?.school || "";
-  heroYear.value = data.hero?.year || "";
-  heroQuote.value = data.hero?.quote || "";
+  tributeId = data.id;
+
+  // HERO
+  document.getElementById("name").value = data.hero?.name || "";
+  document.getElementById("degree").value = data.hero?.degree || "";
+  document.getElementById("school").value = data.hero?.school || "";
+  document.getElementById("year").value = data.hero?.year || "";
+  document.getElementById("quote").value = data.hero?.quote || "";
+
+  // THEME
+  document.getElementById("primaryColor").value = data.theme?.primaryColor || "#d4af37";
+  document.getElementById("secondaryColor").value = data.theme?.secondaryColor || "#ffffff";
 }
 
-/* SAVE */
-async function saveData() {
+/* =========================
+   UPLOAD HELPER
+========================= */
+async function upload(file, folder = "assets") {
 
-  const heroImage = heroImage.files[0]
-    ? await upload("hero", heroImage.files[0])
-    : siteData.hero?.image;
+  if (!file) return null;
 
-  const bg = bgImage.files[0]
-    ? await upload("hero", bgImage.files[0])
-    : siteData.hero?.background;
+  const fileName = `${folder}-${Date.now()}-${file.name}`;
 
-  const payload = {
-    hero: {
-      name: heroName.value,
-      degree: heroDegree.value,
-      school: heroSchool.value,
-      year: heroYear.value,
-      quote: heroQuote.value,
-      image: heroImage,
-      background: bg
-    }
-  };
+  const { error } = await supabase.storage
+    .from("gallery")
+    .upload(fileName, file);
 
-  if (currentEdit) {
-
-    await supabase.from("tributes")
-      .update(payload)
-      .eq("id", currentEdit);
-
-  } else {
-
-    const slug = heroName.value.toLowerCase().replaceAll(" ","-") + "-" + Date.now();
-
-    await supabase.from("tributes").insert([{ ...payload, slug }]);
+  if (error) {
+    console.error(error);
+    return null;
   }
 
-  loadMyTributes();
+  const { data } = supabase.storage
+    .from("gallery")
+    .getPublicUrl(fileName);
+
+  return data.publicUrl;
 }
 
-/* INIT */
-document.addEventListener("DOMContentLoaded", loadMyTributes);
+/* =========================
+   SAVE EVERYTHING
+========================= */
+async function saveAll() {
+
+  if (!tributeId) {
+    alert("Tribute not found");
+    return;
+  }
+
+  /* HERO */
+  const heroImage = await upload(document.getElementById("heroImage").files[0], "hero");
+  const bgImage = await upload(document.getElementById("bgImage").files[0], "bg");
+
+  const hero = {
+    name: document.getElementById("name").value,
+    degree: document.getElementById("degree").value,
+    school: document.getElementById("school").value,
+    year: document.getElementById("year").value,
+    quote: document.getElementById("quote").value,
+    image: heroImage,
+    background: bgImage
+  };
+
+  /* MUSIC */
+  const musicFile = await upload(document.getElementById("musicUpload").files[0], "music");
+
+  const music = musicFile ? {
+    file: musicFile,
+    loop: true,
+    volume: 0.5
+  } : null;
+
+  /* THEME */
+  const theme = {
+    primaryColor: document.getElementById("primaryColor").value,
+    secondaryColor: document.getElementById("secondaryColor").value
+  };
+
+  /* UPDATE DB */
+  const { error } = await supabase
+    .from("tributes")
+    .update({
+      hero,
+      theme,
+      music
+    })
+    .eq("id", tributeId);
+
+  if (error) {
+    console.error(error);
+    alert("Save failed");
+  } else {
+    alert("Saved successfully ❤️");
+  }
+
+  /* GALLERY */
+  const files = document.getElementById("galleryUpload").files;
+
+  for (let file of files) {
+    const url = await upload(file, "gallery");
+
+    if (url) {
+      await supabase.from("gallery").insert([{
+        tribute_id: tributeId,
+        image_url: url
+      }]);
+    }
+  }
+
+  alert("All changes saved 🎉");
+}
