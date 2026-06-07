@@ -295,3 +295,73 @@ h2 {
     border-radius: 20px;
   }
 }
+@media (max-width: 768px) {
+
+  body {
+    font-size: 14px;
+  }
+
+  /* HERO */
+  #hero {
+    height: 90vh;
+    padding: 20px;
+  }
+
+  #hero-name {
+    font-size: 28px;
+  }
+
+  #hero-degree {
+    font-size: 16px;
+  }
+
+  #hero-school,
+  #hero-year {
+    font-size: 13px;
+  }
+
+  #hero-image {
+    width: 90px;
+    height: 90px;
+  }
+
+  /* BUTTONS */
+  button {
+    width: 100%;
+    font-size: 14px;
+  }
+
+  /* SECTIONS */
+  #gallery-section,
+  #messages-section {
+    padding: 40px 15px;
+  }
+
+  /* GRID FIX */
+  #gallery-grid,
+  #messages-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* MESSAGE CARDS */
+  .message-card {
+    padding: 15px;
+  }
+
+  /* LIGHTBOX */
+  #lightbox img {
+    width: 95%;
+  }
+
+  /* MUSIC BUTTON */
+  .music-control {
+    bottom: 15px;
+    right: 15px;
+  }
+
+  .music-control button {
+    width: 48px;
+    height: 48px;
+  }
+}
