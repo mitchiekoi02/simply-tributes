@@ -14,8 +14,12 @@
 
 <body>
 
+<!-- =========================
+     HERO
+========================= -->
 <section id="hero">
   <div class="overlay"></div>
+
   <div class="hero-content">
 
     <img id="hero-image" />
@@ -31,32 +35,74 @@
   </div>
 </section>
 
+
+<!-- =========================
+     GALLERY
+========================= -->
 <section id="gallery-section">
   <h2>Memories</h2>
   <div id="gallery-grid"></div>
 </section>
 
+
+<!-- =========================
+     MESSAGES + GUEST FORM
+========================= -->
 <section id="messages-section">
+
   <h2>Messages</h2>
+
+  <!-- 🟢 GUEST INPUT FORM -->
+  <div class="guest-form">
+
+    <h3>Leave a Message</h3>
+
+    <input id="guest-name" type="text" placeholder="Your name" />
+
+    <textarea id="guest-message" placeholder="Write your message..."></textarea>
+
+    <input id="guest-photo" type="file" accept="image/*" />
+
+    <button id="submit-message">Send Message ❤️</button>
+
+  </div>
+
+  <!-- 🟣 MESSAGES DISPLAY -->
   <div id="messages-grid"></div>
+
 </section>
 
-<!-- SHARE -->
+
+<!-- =========================
+     SHARE
+========================= -->
 <div class="share-container">
-  <button onclick="shareFB()">FB</button>
+  <button onclick="shareFB()">Facebook</button>
   <button onclick="shareX()">X</button>
-  <button onclick="shareWA()">WA</button>
-  <button onclick="copyLink()">Copy</button>
+  <button onclick="shareWA()">WhatsApp</button>
+  <button onclick="copyLink()">Copy Link</button>
 </div>
 
+
+<!-- =========================
+     LIGHTBOX
+========================= -->
 <div id="lightbox" class="hidden">
   <img id="lightbox-img"/>
 </div>
 
+
+<!-- =========================
+     MUSIC CONTROLS
+========================= -->
 <div id="music-control" class="hidden">
   <button id="music-toggle">🎵</button>
 </div>
 
+
+<!-- =========================
+     SCRIPT
+========================= -->
 <script src="js/script.js"></script>
 
 </body>
