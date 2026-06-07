@@ -1,1 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <title>Simply Tributes</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Fonts (fallbacks; real selection comes from JS) -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<!-- =========================
+     HERO SECTION
+========================= -->
+<section id="hero">
+
+  <div class="overlay"></div>
+
+  <div class="hero-content">
+
+    <!-- HERO IMAGE (UPLOADABLE) -->
+    <img id="hero-image" alt="Hero Image">
+
+    <!-- TEXT -->
+    <h1 id="hero-name"></h1>
+
+    <h2 id="hero-degree"></h2>
+
+    <h3 id="hero-school"></h3>
+
+    <p id="hero-year"></p>
+
+    <blockquote id="hero-quote"></blockquote>
+
+    <!-- BUTTON -->
+    <button id="begin-btn">Begin Journey</button>
+
+  </div>
+
+</section>
+
+
+<!-- =========================
+     GALLERY SECTION
+========================= -->
+<section id="gallery-section">
+
+  <h2 class="section-title">Memories</h2>
+
+  <div id="gallery-grid"></div>
+
+</section>
+
+
+<!-- =========================
+     LIGHTBOX (IMAGE POPUP)
+========================= -->
+<div id="lightbox" class="hidden">
+  <img id="lightbox-img" alt="Preview">
+</div>
+
+
+<!-- =========================
+     MUSIC CONTROL
+========================= -->
+<div id="music-control" class="music-control hidden">
+  <button id="music-toggle">🎵</button>
+</div>
+
+<input type="file" id="music-upload" accept="audio/*" hidden />
+
+
+<!-- =========================
+     SCRIPT
+========================= -->
+<script src="js/script.js"></script>
+
+</body>
+</html>
