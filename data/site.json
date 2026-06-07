@@ -12,3 +12,20 @@
     "caption": "Graduation Day"
   }
 ]
+"messages": [
+  {
+    "name": "Mom & Dad",
+    "photo": "assets/messages/momdad.jpg",
+    "message": "We are so proud of you. You worked hard for this moment and deserve all the success in the world."
+  },
+  {
+    "name": "Best Friend",
+    "photo": "assets/messages/friend.jpg",
+    "message": "Congrats! From sleepless nights to graduation day — we made it!"
+  },
+  {
+    "name": "Teacher",
+    "photo": "assets/messages/teacher.jpg",
+    "message": "You were one of the most dedicated students. Keep reaching for your dreams."
+  }
+]
