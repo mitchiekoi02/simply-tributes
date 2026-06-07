@@ -6,7 +6,7 @@ let isPlaying = false;
 ========================= */
 const supabase = window.supabase.createClient(
   "https://gzcsahzxpohpuqwbigfn.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6Y3NhaHp4cG9ocHVxd2JpZ2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NzQ4NjcsImV4cCI6MjA5NjM1MDg2N30.RlKKTSZQ-GXVZtg8gY_AdnWtWI2EBWc4ujWhIqydPZc"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6Y3NhaHp4cG9ocHVxd2JpZ2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NzQ4NjcsImV4cCI6MjA5NjM1MDg2N30.RlKKTSZQ-GXVZtg8yG_AdnWtWI2EBcW4ujWhIqydPZc"
 );
 
 /* =========================
@@ -23,32 +23,38 @@ const $ = (id) => document.getElementById(id);
 /* =========================
    INIT
 ========================= */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   setupEvents();
-  loadTribute();
+  await loadTribute();
 });
 
 /* =========================
    LOAD TRIBUTE
 ========================= */
 async function loadTribute() {
-  const { data, error } = await supabase
-    .from("tributes")
-    .select("*")
-    .eq("slug", slug)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("tributes")
+      .select("*")
+      .eq("slug", slug)
+      .single();
 
-  if (error || !data) {
-    console.error("Tribute not found:", error);
-    return;
+    if (error || !data) {
+      console.error("Tribute not found:", error);
+      return;
+    }
+
+    tributeId = data.id;
+
+    renderTribute(data);
+    await loadGallery(tributeId);
+    await loadMessages(tributeId);
+
+    subscribeMessages(tributeId);
+
+  } catch (err) {
+    console.error("Load error:", err);
   }
-
-  tributeId = data.id;
-
-  renderTribute(data);
-  loadGallery(tributeId);
-  loadMessages(tributeId);
-  subscribeMessages(tributeId);
 }
 
 /* =========================
@@ -56,20 +62,25 @@ async function loadTribute() {
 ========================= */
 function renderTribute(data) {
   if (data.hero) {
-    $("hero-image").src = data.hero.image || "";
-    $("hero-name").textContent = data.hero.name || "";
-    $("hero-degree").textContent = data.hero.degree || "";
-    $("hero-school").textContent = data.hero.school || "";
-    $("hero-year").textContent = data.hero.year || "";
-    $("hero-quote").textContent = data.hero.quote || "";
+    const heroImg = $("hero-image");
+    const hero = $("hero");
 
-    if (data.hero.background) {
-      $("hero").style.backgroundImage = `url(${data.hero.background})`;
+    if (heroImg) heroImg.src = data.hero.image || "";
+    $("hero-name") && ($("hero-name").textContent = data.hero.name || "");
+    $("hero-degree") && ($("hero-degree").textContent = data.hero.degree || "");
+    $("hero-school") && ($("hero-school").textContent = data.hero.school || "");
+    $("hero-year") && ($("hero-year").textContent = data.hero.year || "");
+    $("hero-quote") && ($("hero-quote").textContent = data.hero.quote || "");
+
+    if (hero && data.hero.background) {
+      hero.style.backgroundImage = `url(${data.hero.background})`;
     }
   }
 
   if (data.music?.file) {
     audio.src = data.music.file;
+    audio.loop = true;
+
     $("music-control")?.classList.remove("hidden");
   }
 }
@@ -78,10 +89,15 @@ function renderTribute(data) {
    GALLERY
 ========================= */
 async function loadGallery(id) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("gallery")
     .select("*")
     .eq("tribute_id", id);
+
+  if (error) {
+    console.error("Gallery error:", error);
+    return;
+  }
 
   const grid = $("gallery-grid");
   if (!grid) return;
@@ -92,7 +108,7 @@ async function loadGallery(id) {
     const el = document.createElement("div");
     el.className = "gallery-item";
 
-    el.innerHTML = `<img src="${img.image_url}" loading="lazy">`;
+    el.innerHTML = `<img src="${img.image_url}" loading="lazy" />`;
 
     el.onclick = () => {
       const lightboxImg = $("lightbox-img");
@@ -109,42 +125,47 @@ async function loadGallery(id) {
 }
 
 /* =========================
-   LOAD MESSAGES
+   MESSAGES
 ========================= */
 async function loadMessages(id) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("messages")
     .select("*")
     .eq("tribute_id", id)
     .order("created_at", { ascending: true });
 
+  if (error) {
+    console.error("Messages error:", error);
+    return;
+  }
+
   const grid = $("messages-grid");
   if (!grid) return;
 
   grid.innerHTML = "";
-
   (data || []).forEach(renderMessage);
 }
 
 /* =========================
-   REALTIME MESSAGES
+   REALTIME (SAFE)
 ========================= */
 function subscribeMessages(id) {
-  supabase
-    .channel("messages-live")
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-        filter: `tribute_id=eq.${id}`
-      },
-      (payload) => {
-        renderMessage(payload.new, true);
-      }
-    )
-    .subscribe();
+  const channel = supabase.channel("messages-live");
+
+  channel.on(
+    "postgres_changes",
+    {
+      event: "INSERT",
+      schema: "public",
+      table: "messages",
+      filter: `tribute_id=eq.${id}`
+    },
+    (payload) => {
+      if (payload?.new) renderMessage(payload.new, true);
+    }
+  );
+
+  channel.subscribe();
 }
 
 /* =========================
@@ -158,7 +179,7 @@ function renderMessage(m, prepend = false) {
   div.className = "message-card";
 
   div.innerHTML = `
-    ${m.photo_url ? `<img src="${m.photo_url}" loading="lazy">` : ""}
+    ${m.photo_url ? `<img src="${m.photo_url}" loading="lazy" />` : ""}
     <h3>${m.name || ""}</h3>
     <p>${m.message || ""}</p>
   `;
@@ -167,27 +188,33 @@ function renderMessage(m, prepend = false) {
 }
 
 /* =========================
-   UPLOAD GUEST IMAGE
+   UPLOAD IMAGE
 ========================= */
 async function uploadGuestImage(file) {
   if (!file) return null;
 
-  const fileName = `guest-${Date.now()}-${file.name}`;
+  try {
+    const fileName = `guest-${Date.now()}-${file.name}`;
 
-  const { error } = await supabase.storage
-    .from("gallery")
-    .upload(fileName, file);
+    const { error } = await supabase.storage
+      .from("gallery")
+      .upload(fileName, file);
 
-  if (error) {
-    console.error("Upload error:", error);
+    if (error) {
+      console.error("Upload error:", error);
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from("gallery")
+      .getPublicUrl(fileName);
+
+    return data.publicUrl;
+
+  } catch (err) {
+    console.error("Upload crash:", err);
     return null;
   }
-
-  const { data } = supabase.storage
-    .from("gallery")
-    .getPublicUrl(fileName);
-
-  return data.publicUrl;
 }
 
 /* =========================
@@ -195,16 +222,20 @@ async function uploadGuestImage(file) {
 ========================= */
 function setupEvents() {
 
-  $("music-toggle")?.addEventListener("click", () => {
+  $("music-toggle")?.addEventListener("click", async () => {
     if (!audio.src) return;
 
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio.play().catch(() => {});
-    }
+    try {
+      if (isPlaying) {
+        audio.pause();
+      } else {
+        await audio.play();
+      }
 
-    isPlaying = !isPlaying;
+      isPlaying = !isPlaying;
+    } catch (err) {
+      console.warn("Audio blocked by browser:", err);
+    }
   });
 
   $("begin-btn")?.addEventListener("click", () => {
@@ -217,8 +248,8 @@ function setupEvents() {
 
   $("submit-message")?.addEventListener("click", async () => {
 
-    const name = $("guest-name")?.value;
-    const message = $("guest-message")?.value;
+    const name = $("guest-name")?.value?.trim();
+    const message = $("guest-message")?.value?.trim();
     const file = $("guest-photo")?.files?.[0];
 
     if (!name || !message) {
@@ -252,7 +283,7 @@ function setupEvents() {
 }
 
 /* =========================
-   SHARE SYSTEM (MOBILE-FIRST)
+   SHARE SYSTEM
 ========================= */
 function shareFB() {
   const url = encodeURIComponent(location.href);
