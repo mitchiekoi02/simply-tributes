@@ -1,1 +1,14 @@
-
+"gallery": [
+  {
+    "src": "assets/gallery/1.jpg",
+    "caption": "School Memories"
+  },
+  {
+    "src": "assets/gallery/2.jpg",
+    "caption": "Friends Forever"
+  },
+  {
+    "src": "assets/gallery/3.jpg",
+    "caption": "Graduation Day"
+  }
+]
