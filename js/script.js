@@ -1,75 +1,53 @@
+
 let audio = new Audio();
 let isPlaying = false;
 
-const supabaseUrl = "https://gzcsahzxpohpuqwbigfn.supabase.co";
-const supabaseKey = "YOUR_ANON_KEY";
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+const supabase = window.supabase.createClient(
+  "https://gzcsahzxpohpuqwbigfn.supabase.co",
+  "YOUR_ANON_KEY"
+);
 
-/* =========================
-   GET SLUG
-========================= */
-const params = new URLSearchParams(window.location.search);
-const slug = params.get("slug") || "demo";
+const slug = new URLSearchParams(location.search).get("slug") || "demo";
 
-/* =========================
-   LOAD TRIBUTE
-========================= */
+/* LOAD */
 async function loadTribute() {
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("tributes")
     .select("*")
     .eq("slug", slug)
     .single();
 
-  if (error || !data) return;
+  if (!data) return;
 
-  renderTribute(data);
+  render(data);
   loadGallery(data.id);
   loadMessages(data.id);
 }
 
-/* =========================
-   RENDER
-========================= */
-function renderTribute(data) {
-
-  const root = document.documentElement;
-
-  if (data.theme) {
-    root.style.setProperty("--primary-color", data.theme.primaryColor);
-    root.style.setProperty("--secondary-color", data.theme.secondaryColor);
-    root.style.setProperty("--accent-color", data.theme.accentColor);
-
-    document.body.style.fontFamily = data.theme.bodyFont || "Poppins";
-  }
+/* RENDER */
+function render(data) {
 
   if (data.hero) {
-    document.getElementById("hero-image").src = data.hero.image || "";
-    document.getElementById("hero-name").textContent = data.hero.name || "";
-    document.getElementById("hero-degree").textContent = data.hero.degree || "";
-    document.getElementById("hero-school").textContent = data.hero.school || "";
-    document.getElementById("hero-year").textContent = data.hero.year || "";
-    document.getElementById("hero-quote").textContent = data.hero.quote || "";
+    hero-image.src = data.hero.image || "";
+    hero-name.textContent = data.hero.name || "";
+    hero-degree.textContent = data.hero.degree || "";
+    hero-school.textContent = data.hero.school || "";
+    hero-year.textContent = data.hero.year || "";
+    hero-quote.textContent = data.hero.quote || "";
 
     if (data.hero.background) {
-      document.getElementById("hero").style.backgroundImage =
-        `url(${data.hero.background})`;
+      hero.style.backgroundImage = `url(${data.hero.background})`;
     }
   }
 
   if (data.music?.file) {
     audio.src = data.music.file;
-    audio.loop = data.music.loop ?? true;
-    audio.volume = data.music.volume ?? 0.5;
-
-    document.getElementById("music-control").classList.remove("hidden");
+    music-control.classList.remove("hidden");
   }
 }
 
-/* =========================
-   GALLERY
-========================= */
+/* GALLERY */
 async function loadGallery(id) {
 
   const { data } = await supabase
@@ -77,28 +55,22 @@ async function loadGallery(id) {
     .select("*")
     .eq("tribute_id", id);
 
-  const grid = document.getElementById("gallery-grid");
-  grid.innerHTML = "";
+  gallery-grid.innerHTML = "";
 
-  (data || []).forEach(item => {
+  (data || []).forEach(img => {
+    const el = document.createElement("div");
+    el.innerHTML = `<img src="${img.image_url}">`;
 
-    const div = document.createElement("div");
-    div.className = "gallery-item";
-
-    div.innerHTML = `<img src="${item.image_url}">`;
-
-    div.onclick = () => {
-      document.getElementById("lightbox-img").src = item.image_url;
-      document.getElementById("lightbox").classList.remove("hidden");
+    el.onclick = () => {
+      lightbox-img.src = img.image_url;
+      lightbox.classList.remove("hidden");
     };
 
-    grid.appendChild(div);
+    gallery-grid.appendChild(el);
   });
 }
 
-/* =========================
-   MESSAGES
-========================= */
+/* MESSAGES */
 async function loadMessages(id) {
 
   const { data } = await supabase
@@ -106,51 +78,51 @@ async function loadMessages(id) {
     .select("*")
     .eq("tribute_id", id);
 
-  const grid = document.getElementById("messages-grid");
-  grid.innerHTML = "";
+  messages-grid.innerHTML = "";
 
-  (data || []).forEach(msg => {
-
-    const card = document.createElement("div");
-    card.className = "message-card";
-
-    card.innerHTML = `
-      <img src="${msg.photo_url || ''}">
-      <h3>${msg.name || ''}</h3>
-      <p>${msg.message || ''}</p>
+  (data || []).forEach(m => {
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <img src="${m.photo_url || ''}">
+      <h3>${m.name}</h3>
+      <p>${m.message}</p>
     `;
-
-    grid.appendChild(card);
+    messages-grid.appendChild(div);
   });
 }
 
-/* =========================
-   EVENTS
-========================= */
+/* EVENTS */
 document.addEventListener("DOMContentLoaded", () => {
 
-  document.getElementById("music-toggle")?.addEventListener("click", async () => {
-
+  music-toggle.onclick = () => {
     if (!audio.src) return;
+    isPlaying ? audio.pause() : audio.play();
+    isPlaying = !isPlaying;
+  };
 
-    if (isPlaying) {
-      audio.pause();
-      isPlaying = false;
-    } else {
-      audio.play().catch(() => {});
-      isPlaying = true;
-    }
-  });
+  begin-btn.onclick = () =>
+    gallery-section.scrollIntoView({ behavior: "smooth" });
 
-  document.getElementById("begin-btn")?.addEventListener("click", () => {
-    document.getElementById("gallery-section").scrollIntoView({
-      behavior: "smooth"
-    });
-  });
-
-  document.getElementById("lightbox")?.addEventListener("click", () => {
-    document.getElementById("lightbox").classList.add("hidden");
-  });
+  lightbox.onclick = () =>
+    lightbox.classList.add("hidden");
 
   loadTribute();
 });
+
+/* SHARE */
+function shareFB() {
+  window.open(`https://facebook.com/sharer/sharer.php?u=${location.href}`);
+}
+
+function shareX() {
+  window.open(`https://twitter.com/intent/tweet?url=${location.href}`);
+}
+
+function shareWA() {
+  window.open(`https://wa.me/?text=${location.href}`);
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(location.href);
+  alert("Copied!");
+}
