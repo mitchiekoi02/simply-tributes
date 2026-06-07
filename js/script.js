@@ -10,14 +10,23 @@ const supabase = window.supabase.createClient(
 );
 
 /* =========================
-   GET SLUG
+   STATE
 ========================= */
 const slug = new URLSearchParams(location.search).get("slug") || "demo";
+let tributeId = null;
 
 /* =========================
-   ELEMENT HELPERS
+   HELPERS
 ========================= */
 const $ = (id) => document.getElementById(id);
+
+/* =========================
+   INIT APP
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+  setupEvents();
+  loadTribute();
+});
 
 /* =========================
    LOAD TRIBUTE
@@ -35,9 +44,12 @@ async function loadTribute() {
     return;
   }
 
+  tributeId = data.id;
+
   render(data);
-  loadGallery(data.id);
-  loadMessages(data.id);
+  loadGallery(tributeId);
+  loadMessages(tributeId);
+  subscribeMessages(tributeId); // 🔥 REALTIME
 }
 
 /* =========================
@@ -45,7 +57,6 @@ async function loadTribute() {
 ========================= */
 function render(data) {
 
-  // HERO
   if (data.hero) {
     $("hero-image").src = data.hero.image || "";
     $("hero-name").textContent = data.hero.name || "";
@@ -59,7 +70,6 @@ function render(data) {
     }
   }
 
-  // MUSIC
   if (data.music?.file) {
     audio.src = data.music.file;
     $("music-control")?.classList.remove("hidden");
@@ -96,35 +106,69 @@ async function loadGallery(id) {
 }
 
 /* =========================
-   MESSAGES
+   MESSAGES (INITIAL LOAD)
 ========================= */
 async function loadMessages(id) {
 
   const { data } = await supabase
     .from("messages")
     .select("*")
-    .eq("tribute_id", id);
+    .eq("tribute_id", id)
+    .order("created_at", { ascending: true });
 
   const grid = $("messages-grid");
   grid.innerHTML = "";
 
-  (data || []).forEach(m => {
-
-    const div = document.createElement("div");
-    div.className = "message-card";
-
-    div.innerHTML = `
-      ${m.photo_url ? `<img src="${m.photo_url}">` : ""}
-      <h3>${m.name || ""}</h3>
-      <p>${m.message || ""}</p>
-    `;
-
-    grid.appendChild(div);
-  });
+  (data || []).forEach(renderMessage);
 }
 
 /* =========================
-   UPLOAD GUEST IMAGE
+   REALTIME MESSAGES
+========================= */
+function subscribeMessages(id) {
+
+  supabase
+    .channel("messages-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+        filter: `tribute_id=eq.${id}`
+      },
+      (payload) => {
+        renderMessage(payload.new, true);
+      }
+    )
+    .subscribe();
+}
+
+/* =========================
+   RENDER SINGLE MESSAGE
+========================= */
+function renderMessage(m, prepend = false) {
+
+  const grid = $("messages-grid");
+
+  const div = document.createElement("div");
+  div.className = "message-card";
+
+  div.innerHTML = `
+    ${m.photo_url ? `<img src="${m.photo_url}">` : ""}
+    <h3>${m.name || ""}</h3>
+    <p>${m.message || ""}</p>
+  `;
+
+  if (prepend) {
+    grid.prepend(div);
+  } else {
+    grid.appendChild(div);
+  }
+}
+
+/* =========================
+   UPLOAD IMAGE (GUESTS)
 ========================= */
 async function uploadGuestImage(file) {
 
@@ -151,9 +195,8 @@ async function uploadGuestImage(file) {
 /* =========================
    EVENTS
 ========================= */
-document.addEventListener("DOMContentLoaded", () => {
+function setupEvents() {
 
-  // MUSIC TOGGLE
   $("music-toggle")?.addEventListener("click", () => {
     if (!audio.src) return;
 
@@ -166,17 +209,17 @@ document.addEventListener("DOMContentLoaded", () => {
     isPlaying = !isPlaying;
   });
 
-  // BEGIN BUTTON
   $("begin-btn")?.addEventListener("click", () => {
     $("gallery-section").scrollIntoView({ behavior: "smooth" });
   });
 
-  // LIGHTBOX CLOSE
   $("lightbox")?.addEventListener("click", () => {
     $("lightbox").classList.add("hidden");
   });
 
-  // SUBMIT MESSAGE (GUEST SYSTEM)
+  /* =========================
+     GUEST MESSAGE SUBMIT
+  ========================= */
   $("submit-message")?.addEventListener("click", async () => {
 
     const name = $("guest-name").value;
@@ -190,14 +233,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const photo_url = await uploadGuestImage(file);
 
-    const { data: tribute } = await supabase
-      .from("tributes")
-      .select("id")
-      .eq("slug", slug)
-      .single();
-
     await supabase.from("messages").insert([{
-      tribute_id: tribute.id,
+      tribute_id: tributeId,
       name,
       message,
       photo_url
@@ -207,30 +244,29 @@ document.addEventListener("DOMContentLoaded", () => {
     $("guest-message").value = "";
     $("guest-photo").value = "";
 
-    loadMessages(tribute.id);
-    alert("Message sent ❤️");
+    alert("Message sent ❤️ (appears live for everyone)");
   });
-
-  // START APP
-  loadTribute();
-});
+}
 
 /* =========================
-   SHARE FUNCTIONS
+   SHARE SYSTEM (VIRAL)
 ========================= */
 function shareFB() {
-  window.open(`https://facebook.com/sharer/sharer.php?u=${location.href}`);
+  const url = encodeURIComponent(location.href);
+  window.open(`https://facebook.com/sharer/sharer.php?u=${url}`);
 }
 
 function shareX() {
-  window.open(`https://twitter.com/intent/tweet?url=${location.href}`);
+  const url = encodeURIComponent(location.href);
+  window.open(`https://twitter.com/intent/tweet?text=Join this tribute ❤️&url=${url}`);
 }
 
 function shareWA() {
-  window.open(`https://wa.me/?text=${location.href}`);
+  const url = encodeURIComponent(location.href);
+  window.open(`https://wa.me/?text=Join this tribute ❤️ ${url}`);
 }
 
 function copyLink() {
   navigator.clipboard.writeText(location.href);
-  alert("Copied!");
+  alert("Link copied ❤️ Share it!");
 }
