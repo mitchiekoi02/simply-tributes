@@ -1,45 +1,23 @@
-
 let audio = new Audio();
 let isPlaying = false;
 
 /* =========================
-   SUPABASE CONFIG
+   SUPABASE INIT
 ========================= */
-const supabaseUrl = "https://gzcsahzxpohpuqwbigfn.supabase.co";
-const supabaseKey = "YOUR_SUPABASE_ANON_KEY"; // keep yours here
-
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-/* =========================
-   UPLOAD HELPERS (GUEST IMAGES)
-========================= */
-async function uploadGuestImage(file) {
-
-  if (!file) return null;
-
-  const fileName = `guest-${Date.now()}-${file.name}`;
-
-  const { error } = await supabase.storage
-    .from("gallery")
-    .upload(fileName, file);
-
-  if (error) {
-    console.error(error);
-    return null;
-  }
-
-  const { data } = supabase.storage
-    .from("gallery")
-    .getPublicUrl(fileName);
-
-  return data.publicUrl;
-}
+const supabase = window.supabase.createClient(
+  "https://gzcsahzxpohpuqwbigfn.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6Y3NhaHp4cG9ocHVxd2JpZ2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NzQ4NjcsImV4cCI6MjA5NjM1MDg2N30.RlKKTSZQ-GXVZtg8yG_AdnWtWI2EBWc4ujWhIqydPZc"
+);
 
 /* =========================
    GET SLUG
 ========================= */
-const params = new URLSearchParams(window.location.search);
-const slug = params.get("slug") || "demo";
+const slug = new URLSearchParams(location.search).get("slug") || "demo";
+
+/* =========================
+   ELEMENT HELPERS
+========================= */
+const $ = (id) => document.getElementById(id);
 
 /* =========================
    LOAD TRIBUTE
@@ -57,147 +35,156 @@ async function loadTribute() {
     return;
   }
 
-  renderTribute(data);
-}
-
-/* =========================
-   RENDER TRIBUTE
-========================= */
-function renderTribute(data) {
-
-  const root = document.documentElement;
-
-  /* THEME */
-  if (data.theme) {
-    root.style.setProperty("--primary-color", data.theme.primaryColor);
-    root.style.setProperty("--secondary-color", data.theme.secondaryColor);
-    root.style.setProperty("--accent-color", data.theme.accentColor);
-
-    document.body.style.fontFamily = data.theme.bodyFont || "Poppins";
-  }
-
-  /* HERO */
-  if (data.hero) {
-    document.getElementById("hero-image").src = data.hero.image || "";
-    document.getElementById("hero-name").textContent = data.hero.name || "";
-    document.getElementById("hero-degree").textContent = data.hero.degree || "";
-    document.getElementById("hero-school").textContent = data.hero.school || "";
-    document.getElementById("hero-year").textContent = data.hero.year || "";
-    document.getElementById("hero-quote").textContent = data.hero.quote || "";
-
-    document.getElementById("hero").style.backgroundImage =
-      `url(${data.hero.background})`;
-  }
-
-  /* MUSIC */
-  if (data.music?.file) {
-    audio.src = data.music.file;
-    audio.loop = data.music.loop ?? true;
-    audio.volume = data.music.volume ?? 0.5;
-
-    document.getElementById("music-control").classList.remove("hidden");
-  }
-
+  render(data);
   loadGallery(data.id);
   loadMessages(data.id);
 }
 
 /* =========================
+   RENDER TRIBUTE
+========================= */
+function render(data) {
+
+  // HERO
+  if (data.hero) {
+    $("hero-image").src = data.hero.image || "";
+    $("hero-name").textContent = data.hero.name || "";
+    $("hero-degree").textContent = data.hero.degree || "";
+    $("hero-school").textContent = data.hero.school || "";
+    $("hero-year").textContent = data.hero.year || "";
+    $("hero-quote").textContent = data.hero.quote || "";
+
+    if (data.hero.background) {
+      $("hero").style.backgroundImage = `url(${data.hero.background})`;
+    }
+  }
+
+  // MUSIC
+  if (data.music?.file) {
+    audio.src = data.music.file;
+    $("music-control")?.classList.remove("hidden");
+  }
+}
+
+/* =========================
    GALLERY
 ========================= */
-async function loadGallery(tributeId) {
+async function loadGallery(id) {
 
   const { data } = await supabase
     .from("gallery")
     .select("*")
-    .eq("tribute_id", tributeId);
+    .eq("tribute_id", id);
 
-  const grid = document.getElementById("gallery-grid");
+  const grid = $("gallery-grid");
   grid.innerHTML = "";
 
-  data?.forEach(item => {
+  (data || []).forEach(img => {
 
-    const div = document.createElement("div");
-    div.classList.add("gallery-item");
+    const el = document.createElement("div");
+    el.className = "gallery-item";
 
-    div.innerHTML = `<img src="${item.image_url}">`;
+    el.innerHTML = `<img src="${img.image_url}">`;
 
-    div.addEventListener("click", () => {
-      document.getElementById("lightbox-img").src = item.image_url;
-      document.getElementById("lightbox").classList.remove("hidden");
-    });
+    el.onclick = () => {
+      $("lightbox-img").src = img.image_url;
+      $("lightbox").classList.remove("hidden");
+    };
 
-    grid.appendChild(div);
+    grid.appendChild(el);
   });
 }
 
 /* =========================
    MESSAGES
 ========================= */
-async function loadMessages(tributeId) {
+async function loadMessages(id) {
 
   const { data } = await supabase
     .from("messages")
     .select("*")
-    .eq("tribute_id", tributeId);
+    .eq("tribute_id", id);
 
-  const grid = document.getElementById("messages-grid");
+  const grid = $("messages-grid");
   grid.innerHTML = "";
 
-  data?.forEach(msg => {
+  (data || []).forEach(m => {
 
-    const card = document.createElement("div");
-    card.classList.add("message-card");
+    const div = document.createElement("div");
+    div.className = "message-card";
 
-    card.innerHTML = `
-      <img src="${msg.photo_url || ''}">
-      <h3>${msg.name || ''}</h3>
-      <p>${msg.message || ''}</p>
+    div.innerHTML = `
+      ${m.photo_url ? `<img src="${m.photo_url}">` : ""}
+      <h3>${m.name || ""}</h3>
+      <p>${m.message || ""}</p>
     `;
 
-    grid.appendChild(card);
+    grid.appendChild(div);
   });
 }
 
 /* =========================
-   GUEST MESSAGE SUBMIT
+   UPLOAD GUEST IMAGE
+========================= */
+async function uploadGuestImage(file) {
+
+  if (!file) return null;
+
+  const fileName = `guest-${Date.now()}-${file.name}`;
+
+  const { error } = await supabase.storage
+    .from("gallery")
+    .upload(fileName, file);
+
+  if (error) {
+    console.error("Upload error:", error);
+    return null;
+  }
+
+  const { data } = supabase.storage
+    .from("gallery")
+    .getPublicUrl(fileName);
+
+  return data.publicUrl;
+}
+
+/* =========================
+   EVENTS
 ========================= */
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* BEGIN BUTTON */
-  document.getElementById("begin-btn")?.addEventListener("click", () => {
-    document.getElementById("gallery-section").scrollIntoView({
-      behavior: "smooth"
-    });
-  });
-
-  /* LIGHTBOX */
-  document.getElementById("lightbox")?.addEventListener("click", () => {
-    document.getElementById("lightbox").classList.add("hidden");
-  });
-
-  /* MUSIC TOGGLE */
-  document.getElementById("music-toggle")?.addEventListener("click", () => {
+  // MUSIC TOGGLE
+  $("music-toggle")?.addEventListener("click", () => {
     if (!audio.src) return;
 
     if (isPlaying) {
       audio.pause();
-      isPlaying = false;
     } else {
       audio.play().catch(() => {});
-      isPlaying = true;
     }
+
+    isPlaying = !isPlaying;
   });
 
-  /* SUBMIT MESSAGE */
-  document.getElementById("submit-message")?.addEventListener("click", async () => {
+  // BEGIN BUTTON
+  $("begin-btn")?.addEventListener("click", () => {
+    $("gallery-section").scrollIntoView({ behavior: "smooth" });
+  });
 
-    const name = document.getElementById("guest-name").value;
-    const message = document.getElementById("guest-message").value;
-    const file = document.getElementById("guest-photo").files[0];
+  // LIGHTBOX CLOSE
+  $("lightbox")?.addEventListener("click", () => {
+    $("lightbox").classList.add("hidden");
+  });
+
+  // SUBMIT MESSAGE (GUEST SYSTEM)
+  $("submit-message")?.addEventListener("click", async () => {
+
+    const name = $("guest-name").value;
+    const message = $("guest-message").value;
+    const file = $("guest-photo").files[0];
 
     if (!name || !message) {
-      alert("Please fill name and message");
+      alert("Please fill in name and message");
       return;
     }
 
@@ -216,14 +203,15 @@ document.addEventListener("DOMContentLoaded", () => {
       photo_url
     }]);
 
-    loadMessages(tribute.id);
+    $("guest-name").value = "";
+    $("guest-message").value = "";
+    $("guest-photo").value = "";
 
-    document.getElementById("guest-name").value = "";
-    document.getElementById("guest-message").value = "";
-    document.getElementById("guest-photo").value = "";
+    loadMessages(tribute.id);
+    alert("Message sent ❤️");
   });
 
-  /* START */
+  // START APP
   loadTribute();
 });
 
@@ -231,21 +219,18 @@ document.addEventListener("DOMContentLoaded", () => {
    SHARE FUNCTIONS
 ========================= */
 function shareFB() {
-  const url = window.location.href;
-  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`);
+  window.open(`https://facebook.com/sharer/sharer.php?u=${location.href}`);
 }
 
 function shareX() {
-  const url = window.location.href;
-  window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}`);
+  window.open(`https://twitter.com/intent/tweet?url=${location.href}`);
 }
 
 function shareWA() {
-  const url = window.location.href;
-  window.open(`https://wa.me/?text=${encodeURIComponent(url)}`);
+  window.open(`https://wa.me/?text=${location.href}`);
 }
 
 function copyLink() {
-  navigator.clipboard.writeText(window.location.href);
-  alert("Link copied!");
+  navigator.clipboard.writeText(location.href);
+  alert("Copied!");
 }
