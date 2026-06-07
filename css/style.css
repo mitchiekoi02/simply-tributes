@@ -1,5 +1,5 @@
 /* =========================
-   ROOT THEME VARIABLES
+   THEME VARIABLES
 ========================= */
 :root {
   --primary-color: #d4af37;
@@ -26,7 +26,7 @@ body {
 }
 
 /* =========================
-   HERO SECTION
+   HERO
 ========================= */
 #hero {
   height: 100vh;
@@ -42,7 +42,6 @@ body {
   background-position: center;
 }
 
-/* dark overlay */
 #hero .overlay {
   position: absolute;
   inset: 0;
@@ -50,7 +49,6 @@ body {
   z-index: 1;
 }
 
-/* content wrapper */
 .hero-content {
   position: relative;
   z-index: 2;
@@ -58,9 +56,6 @@ body {
   padding: 20px;
 }
 
-/* =========================
-   HERO IMAGE
-========================= */
 #hero-image {
   width: 140px;
   height: 140px;
@@ -69,16 +64,10 @@ body {
 
   border: 4px solid var(--primary-color);
   margin-bottom: 20px;
-
-  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
 }
 
-/* =========================
-   TEXT STYLES
-========================= */
 #hero-name {
   font-size: 42px;
-  font-weight: 700;
   margin-bottom: 10px;
 }
 
@@ -109,46 +98,40 @@ body {
 }
 
 /* =========================
-   BUTTON
+   BUTTONS
 ========================= */
 button {
   background: var(--primary-color);
   color: #fff;
-
   border: none;
-  border-radius: 30px;
-
   padding: 12px 22px;
-  font-weight: 600;
+  border-radius: 30px;
   cursor: pointer;
-
   transition: 0.3s ease;
+  font-weight: 600;
 }
 
 button:hover {
   transform: scale(1.05);
-  opacity: 0.9;
 }
 
 /* =========================
-   SECTION TITLE
+   SECTION TITLES
 ========================= */
 .section-title {
   font-size: 32px;
   text-align: center;
   margin-bottom: 40px;
-  color: var(--secondary-color);
 }
 
 /* =========================
-   GALLERY SECTION
+   GALLERY
 ========================= */
 #gallery-section {
   padding: 80px 20px;
   background: #0f0f0f;
 }
 
-/* grid */
 #gallery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -157,11 +140,9 @@ button:hover {
   margin: auto;
 }
 
-/* image card */
 .gallery-item {
-  position: relative;
-  overflow: hidden;
   border-radius: 12px;
+  overflow: hidden;
   cursor: pointer;
 }
 
@@ -169,11 +150,53 @@ button:hover {
   width: 100%;
   height: 220px;
   object-fit: cover;
-  transition: transform 0.4s ease;
+  transition: 0.4s;
 }
 
-.gallery-item:hover img {
+.gallery-item img:hover {
   transform: scale(1.1);
+}
+
+/* =========================
+   MESSAGES
+========================= */
+#messages-section {
+  padding: 80px 20px;
+  background: #111;
+}
+
+#messages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+  margin: auto;
+}
+
+.message-card {
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 15px;
+  text-align: center;
+}
+
+.message-card img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary-color);
+  margin-bottom: 10px;
+}
+
+.message-card h3 {
+  margin-bottom: 10px;
+}
+
+.message-card p {
+  font-size: 14px;
+  opacity: 0.85;
+  line-height: 1.5;
 }
 
 /* =========================
@@ -183,11 +206,9 @@ button:hover {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.92);
-
   display: flex;
   justify-content: center;
   align-items: center;
-
   z-index: 999;
 }
 
@@ -202,28 +223,20 @@ button:hover {
 }
 
 /* =========================
-   MUSIC CONTROL
+   MUSIC
 ========================= */
 .music-control {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  z-index: 1000;
+  z-index: 999;
 }
 
 .music-control button {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-
-  background: var(--primary-color);
-  color: white;
   font-size: 20px;
-
-  border: none;
-  cursor: pointer;
-
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
 }
 
 /* =========================
@@ -237,9 +250,5 @@ button:hover {
   #hero-image {
     width: 110px;
     height: 110px;
-  }
-
-  .section-title {
-    font-size: 26px;
   }
 }
