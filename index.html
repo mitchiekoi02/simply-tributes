@@ -23,6 +23,15 @@
 <body>
 
 <!-- =========================
+     INSTALL BUTTON (PWA)
+========================= -->
+<button id="installBtn"
+  style="display:none; position:fixed; bottom:100px; left:50%; transform:translateX(-50%);
+  z-index:9999; padding:10px 16px; border-radius:30px; border:none; background:#d4af37; color:#000; font-weight:600;">
+  📲 Install App
+</button>
+
+<!-- =========================
      HERO
 ========================= -->
 <section id="hero">
@@ -30,7 +39,7 @@
 
   <div class="hero-content">
 
-    <img id="hero-image" alt="Hero image"/>
+    <img id="hero-image" alt="Tribute hero image"/>
 
     <h1 id="hero-name"></h1>
     <h2 id="hero-degree"></h2>
@@ -58,22 +67,17 @@
 
   <h2>Messages</h2>
 
-  <!-- GUEST FORM -->
   <div class="guest-form">
 
     <h3>Leave a Message</h3>
 
     <input id="guest-name" type="text" placeholder="Your name" />
-
     <textarea id="guest-message" placeholder="Write your message..."></textarea>
-
     <input id="guest-photo" type="file" accept="image/*" />
 
     <button id="submit-message">Send Message ❤️</button>
-
   </div>
 
-  <!-- MESSAGES -->
   <div id="messages-grid"></div>
 
 </section>
@@ -109,13 +113,64 @@
   <button onclick="scrollToSection('hero')">🏠</button>
   <button onclick="scrollToSection('gallery-section')">📸</button>
   <button onclick="scrollToSection('messages-section')">💬</button>
-  <button onclick="navigator.share ? shareNative() : copyLink()">🔗</button>
+  <button onclick="shareNative()">🔗</button>
 </div>
 
 <!-- =========================
-     SCRIPT
+     SCRIPTS
 ========================= -->
 <script src="js/script.js"></script>
+
+<!-- =========================
+     PWA INSTALL LOGIC
+========================= -->
+<script>
+let deferredPrompt;
+
+const installBtn = document.getElementById("installBtn");
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = "block";
+});
+
+installBtn?.addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+
+  deferredPrompt.prompt();
+  const choice = await deferredPrompt.userChoice;
+
+  if (choice.outcome === "accepted") {
+    installBtn.style.display = "none";
+  }
+
+  deferredPrompt = null;
+});
+
+/* MOBILE NAV HELPERS */
+function scrollToSection(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+}
+
+/* NATIVE SHARE (MOBILE) */
+function shareNative() {
+  if (navigator.share) {
+    navigator.share({
+      title: "Simply Tributes",
+      url: location.href
+    });
+  } else {
+    copyLink();
+  }
+}
+
+/* fallback */
+function copyLink() {
+  navigator.clipboard.writeText(location.href);
+  alert("Link copied ❤️");
+}
+</script>
 
 </body>
 </html>
