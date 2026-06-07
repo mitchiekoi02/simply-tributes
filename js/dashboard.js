@@ -1,6 +1,6 @@
 const supabase = window.supabase.createClient(
   "https://gzcsahzxpohpuqwbigfn.supabase.co",
-  "YOUR_ANON_KEY"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6Y3NhaHp4cG9ocHVxd2JpZ2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NzQ4NjcsImV4cCI6MjA5NjM1MDg2N30.RlKKTSZQ-GXVZtg8yG_AdnWtWI2EBWc4ujWhIqydPZc"
 );
 
 /* =========================
@@ -13,36 +13,47 @@ let tributeId = null;
 /* =========================
    INIT
 ========================= */
-document.addEventListener("DOMContentLoaded", () => {
-  loadTribute();
-  document.getElementById("saveBtn").addEventListener("click", saveAll);
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadTribute();
+
+  const saveBtn = document.getElementById("saveBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", saveAll);
+  }
 });
 
 /* =========================
-   LOAD EXISTING DATA
+   LOAD TRIBUTE
 ========================= */
 async function loadTribute() {
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("tributes")
     .select("*")
     .eq("slug", slug)
     .single();
 
-  if (!data) return;
+  if (error || !data) {
+    console.error("Failed to load tribute:", error);
+    alert("Tribute not found");
+    return;
+  }
 
   tributeId = data.id;
 
-  // HERO
+  /* HERO FIELDS */
   document.getElementById("name").value = data.hero?.name || "";
   document.getElementById("degree").value = data.hero?.degree || "";
   document.getElementById("school").value = data.hero?.school || "";
   document.getElementById("year").value = data.hero?.year || "";
   document.getElementById("quote").value = data.hero?.quote || "";
 
-  // THEME
-  document.getElementById("primaryColor").value = data.theme?.primaryColor || "#d4af37";
-  document.getElementById("secondaryColor").value = data.theme?.secondaryColor || "#ffffff";
+  /* THEME */
+  document.getElementById("primaryColor").value =
+    data.theme?.primaryColor || "#d4af37";
+
+  document.getElementById("secondaryColor").value =
+    data.theme?.secondaryColor || "#ffffff";
 }
 
 /* =========================
@@ -59,7 +70,7 @@ async function upload(file, folder = "assets") {
     .upload(fileName, file);
 
   if (error) {
-    console.error(error);
+    console.error("Upload error:", error);
     return null;
   }
 
@@ -71,74 +82,103 @@ async function upload(file, folder = "assets") {
 }
 
 /* =========================
-   SAVE EVERYTHING
+   SAVE ALL CHANGES
 ========================= */
 async function saveAll() {
 
   if (!tributeId) {
-    alert("Tribute not found");
+    alert("Tribute not loaded");
     return;
   }
 
-  /* HERO */
-  const heroImage = await upload(document.getElementById("heroImage").files[0], "hero");
-  const bgImage = await upload(document.getElementById("bgImage").files[0], "bg");
+  try {
 
-  const hero = {
-    name: document.getElementById("name").value,
-    degree: document.getElementById("degree").value,
-    school: document.getElementById("school").value,
-    year: document.getElementById("year").value,
-    quote: document.getElementById("quote").value,
-    image: heroImage,
-    background: bgImage
-  };
+    /* =========================
+       HERO UPLOADS
+    ========================= */
+    const heroFile = document.getElementById("heroImage").files[0];
+    const bgFile = document.getElementById("bgImage").files[0];
 
-  /* MUSIC */
-  const musicFile = await upload(document.getElementById("musicUpload").files[0], "music");
+    const heroImage = heroFile ? await upload(heroFile, "hero") : null;
+    const bgImage = bgFile ? await upload(bgFile, "bg") : null;
 
-  const music = musicFile ? {
-    file: musicFile,
-    loop: true,
-    volume: 0.5
-  } : null;
+    const hero = {
+      name: document.getElementById("name").value,
+      degree: document.getElementById("degree").value,
+      school: document.getElementById("school").value,
+      year: document.getElementById("year").value,
+      quote: document.getElementById("quote").value,
+      ...(heroImage && { image: heroImage }),
+      ...(bgImage && { background: bgImage })
+    };
 
-  /* THEME */
-  const theme = {
-    primaryColor: document.getElementById("primaryColor").value,
-    secondaryColor: document.getElementById("secondaryColor").value
-  };
+    /* =========================
+       MUSIC UPLOAD
+    ========================= */
+    const musicFile = document.getElementById("musicUpload").files[0];
 
-  /* UPDATE DB */
-  const { error } = await supabase
-    .from("tributes")
-    .update({
-      hero,
-      theme,
-      music
-    })
-    .eq("id", tributeId);
+    const musicUrl = musicFile
+      ? await upload(musicFile, "music")
+      : null;
 
-  if (error) {
-    console.error(error);
-    alert("Save failed");
-  } else {
-    alert("Saved successfully ❤️");
-  }
+    const music = musicUrl
+      ? {
+          file: musicUrl,
+          loop: true,
+          volume: 0.5
+        }
+      : null;
 
-  /* GALLERY */
-  const files = document.getElementById("galleryUpload").files;
+    /* =========================
+       THEME
+    ========================= */
+    const theme = {
+      primaryColor: document.getElementById("primaryColor").value,
+      secondaryColor: document.getElementById("secondaryColor").value
+    };
 
-  for (let file of files) {
-    const url = await upload(file, "gallery");
+    /* =========================
+       UPDATE TRIBUTE
+    ========================= */
+    const { error: updateError } = await supabase
+      .from("tributes")
+      .update({
+        hero,
+        theme,
+        music
+      })
+      .eq("id", tributeId);
 
-    if (url) {
-      await supabase.from("gallery").insert([{
-        tribute_id: tributeId,
-        image_url: url
-      }]);
+    if (updateError) {
+      console.error(updateError);
+      alert("Failed to save tribute");
+      return;
     }
-  }
 
-  alert("All changes saved 🎉");
+    /* =========================
+       GALLERY UPLOADS
+    ========================= */
+    const galleryFiles =
+      document.getElementById("galleryUpload").files;
+
+    if (galleryFiles?.length) {
+      for (const file of galleryFiles) {
+
+        const url = await upload(file, "gallery");
+
+        if (url) {
+          await supabase.from("gallery").insert([{
+            tribute_id: tributeId,
+            image_url: url
+          }]);
+        }
+      }
+    }
+
+    alert("Saved successfully ❤️");
+
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    alert("Something went wrong");
+  }
 }
