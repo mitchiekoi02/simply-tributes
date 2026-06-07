@@ -6,7 +6,7 @@ let isPlaying = false;
 ========================= */
 const supabase = window.supabase.createClient(
   "https://gzcsahzxpohpuqwbigfn.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6Y3NhaHp4cG9ocHVxd2JpZ2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NzQ4NjcsImV4cCI6MjA5NjM1MDg2N30.RlKKTSZQ-GXVZtg8yG_AdnWtWI2EBWc4ujWhIqydPZc"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6Y3NhaHp4cG9ocHVxd2JpZ2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NzQ4NjcsImV4cCI6MjA5NjM1MDg2N30.RlKKTSZQ-GXVZtg8gY_AdnWtWI2EBWc4ujWhIqydPZc"
 );
 
 /* =========================
@@ -16,12 +16,12 @@ const slug = new URLSearchParams(location.search).get("slug") || "demo";
 let tributeId = null;
 
 /* =========================
-   HELPERS
+   DOM HELPER
 ========================= */
 const $ = (id) => document.getElementById(id);
 
 /* =========================
-   INIT APP
+   INIT
 ========================= */
 document.addEventListener("DOMContentLoaded", () => {
   setupEvents();
@@ -32,7 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
    LOAD TRIBUTE
 ========================= */
 async function loadTribute() {
-
   const { data, error } = await supabase
     .from("tributes")
     .select("*")
@@ -46,17 +45,16 @@ async function loadTribute() {
 
   tributeId = data.id;
 
-  render(data);
+  renderTribute(data);
   loadGallery(tributeId);
   loadMessages(tributeId);
-  subscribeMessages(tributeId); // 🔥 REALTIME
+  subscribeMessages(tributeId);
 }
 
 /* =========================
    RENDER TRIBUTE
 ========================= */
-function render(data) {
-
+function renderTribute(data) {
   if (data.hero) {
     $("hero-image").src = data.hero.image || "";
     $("hero-name").textContent = data.hero.name || "";
@@ -80,25 +78,30 @@ function render(data) {
    GALLERY
 ========================= */
 async function loadGallery(id) {
-
   const { data } = await supabase
     .from("gallery")
     .select("*")
     .eq("tribute_id", id);
 
   const grid = $("gallery-grid");
+  if (!grid) return;
+
   grid.innerHTML = "";
 
-  (data || []).forEach(img => {
-
+  (data || []).forEach((img) => {
     const el = document.createElement("div");
     el.className = "gallery-item";
 
-    el.innerHTML = `<img src="${img.image_url}">`;
+    el.innerHTML = `<img src="${img.image_url}" loading="lazy">`;
 
     el.onclick = () => {
-      $("lightbox-img").src = img.image_url;
-      $("lightbox").classList.remove("hidden");
+      const lightboxImg = $("lightbox-img");
+      const lightbox = $("lightbox");
+
+      if (lightboxImg && lightbox) {
+        lightboxImg.src = img.image_url;
+        lightbox.classList.remove("hidden");
+      }
     };
 
     grid.appendChild(el);
@@ -106,10 +109,9 @@ async function loadGallery(id) {
 }
 
 /* =========================
-   MESSAGES (INITIAL LOAD)
+   LOAD MESSAGES
 ========================= */
 async function loadMessages(id) {
-
   const { data } = await supabase
     .from("messages")
     .select("*")
@@ -117,6 +119,8 @@ async function loadMessages(id) {
     .order("created_at", { ascending: true });
 
   const grid = $("messages-grid");
+  if (!grid) return;
+
   grid.innerHTML = "";
 
   (data || []).forEach(renderMessage);
@@ -126,7 +130,6 @@ async function loadMessages(id) {
    REALTIME MESSAGES
 ========================= */
 function subscribeMessages(id) {
-
   supabase
     .channel("messages-live")
     .on(
@@ -145,33 +148,28 @@ function subscribeMessages(id) {
 }
 
 /* =========================
-   RENDER SINGLE MESSAGE
+   RENDER MESSAGE
 ========================= */
 function renderMessage(m, prepend = false) {
-
   const grid = $("messages-grid");
+  if (!grid) return;
 
   const div = document.createElement("div");
   div.className = "message-card";
 
   div.innerHTML = `
-    ${m.photo_url ? `<img src="${m.photo_url}">` : ""}
+    ${m.photo_url ? `<img src="${m.photo_url}" loading="lazy">` : ""}
     <h3>${m.name || ""}</h3>
     <p>${m.message || ""}</p>
   `;
 
-  if (prepend) {
-    grid.prepend(div);
-  } else {
-    grid.appendChild(div);
-  }
+  prepend ? grid.prepend(div) : grid.appendChild(div);
 }
 
 /* =========================
-   UPLOAD IMAGE (GUESTS)
+   UPLOAD GUEST IMAGE
 ========================= */
 async function uploadGuestImage(file) {
-
   if (!file) return null;
 
   const fileName = `guest-${Date.now()}-${file.name}`;
@@ -210,21 +208,18 @@ function setupEvents() {
   });
 
   $("begin-btn")?.addEventListener("click", () => {
-    $("gallery-section").scrollIntoView({ behavior: "smooth" });
+    $("gallery-section")?.scrollIntoView({ behavior: "smooth" });
   });
 
   $("lightbox")?.addEventListener("click", () => {
-    $("lightbox").classList.add("hidden");
+    $("lightbox")?.classList.add("hidden");
   });
 
-  /* =========================
-     GUEST MESSAGE SUBMIT
-  ========================= */
   $("submit-message")?.addEventListener("click", async () => {
 
-    const name = $("guest-name").value;
-    const message = $("guest-message").value;
-    const file = $("guest-photo").files[0];
+    const name = $("guest-name")?.value;
+    const message = $("guest-message")?.value;
+    const file = $("guest-photo")?.files?.[0];
 
     if (!name || !message) {
       alert("Please fill in name and message");
@@ -233,23 +228,31 @@ function setupEvents() {
 
     const photo_url = await uploadGuestImage(file);
 
-    await supabase.from("messages").insert([{
-      tribute_id: tributeId,
-      name,
-      message,
-      photo_url
-    }]);
+    const { error } = await supabase.from("messages").insert([
+      {
+        tribute_id: tributeId,
+        name,
+        message,
+        photo_url
+      }
+    ]);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to send message");
+      return;
+    }
 
     $("guest-name").value = "";
     $("guest-message").value = "";
     $("guest-photo").value = "";
 
-    alert("Message sent ❤️ (appears live for everyone)");
+    alert("Message sent ❤️ (live for everyone)");
   });
 }
 
 /* =========================
-   SHARE SYSTEM (VIRAL)
+   SHARE SYSTEM (MOBILE-FIRST)
 ========================= */
 function shareFB() {
   const url = encodeURIComponent(location.href);
@@ -268,5 +271,5 @@ function shareWA() {
 
 function copyLink() {
   navigator.clipboard.writeText(location.href);
-  alert("Link copied ❤️ Share it!");
+  alert("Link copied ❤️");
 }
