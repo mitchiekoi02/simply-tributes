@@ -1,31 +1,45 @@
-"gallery": [
-  {
-    "src": "assets/gallery/1.jpg",
-    "caption": "School Memories"
+{
+  "theme": {
+    "primaryColor": "#d4af37",
+    "secondaryColor": "#ffffff",
+    "accentColor": "#222222",
+    "headingFont": "Playfair Display",
+    "bodyFont": "Poppins"
   },
-  {
-    "src": "assets/gallery/2.jpg",
-    "caption": "Friends Forever"
+
+  "hero": {
+    "name": "Sophia Reyes",
+    "degree": "Bachelor of Science in Psychology",
+    "school": "University of the Philippines",
+    "year": "Class of 2026",
+    "quote": "The future belongs to those who believe in the beauty of their dreams.",
+    "image": "assets/hero/hero.jpg",
+    "background": "assets/backgrounds/bg.jpg"
   },
-  {
-    "src": "assets/gallery/3.jpg",
-    "caption": "Graduation Day"
-  }
-]
-"messages": [
-  {
-    "name": "Mom & Dad",
-    "photo": "assets/messages/momdad.jpg",
-    "message": "We are so proud of you. You worked hard for this moment and deserve all the success in the world."
+
+  "music": {
+    "file": "",
+    "autoplay": false,
+    "loop": true,
+    "volume": 0.5
   },
-  {
-    "name": "Best Friend",
-    "photo": "assets/messages/friend.jpg",
-    "message": "Congrats! From sleepless nights to graduation day — we made it!"
-  },
-  {
-    "name": "Teacher",
-    "photo": "assets/messages/teacher.jpg",
-    "message": "You were one of the most dedicated students. Keep reaching for your dreams."
-  }
-]
+
+  "gallery": [
+    { "src": "assets/gallery/1.jpg" },
+    { "src": "assets/gallery/2.jpg" },
+    { "src": "assets/gallery/3.jpg" }
+  ],
+
+  "messages": [
+    {
+      "name": "Mom & Dad",
+      "photo": "assets/messages/mom.jpg",
+      "message": "We are so proud of you. You made it!"
+    },
+    {
+      "name": "Best Friend",
+      "photo": "assets/messages/friend.jpg",
+      "message": "From sleepless nights to graduation day — we did it!"
+    }
+  ]
+}
