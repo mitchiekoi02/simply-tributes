@@ -3,12 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
   <title>Simply Tributes</title>
 
+  <!-- CSS -->
   <link rel="stylesheet" href="css/style.css"/>
 
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet"/>
 
+  <!-- PWA -->
+  <meta name="theme-color" content="#d4af37">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -22,7 +30,7 @@
 
   <div class="hero-content">
 
-    <img id="hero-image" />
+    <img id="hero-image" alt="Hero image"/>
 
     <h1 id="hero-name"></h1>
     <h2 id="hero-degree"></h2>
@@ -35,7 +43,6 @@
   </div>
 </section>
 
-
 <!-- =========================
      GALLERY
 ========================= -->
@@ -44,7 +51,6 @@
   <div id="gallery-grid"></div>
 </section>
 
-
 <!-- =========================
      MESSAGES + GUEST FORM
 ========================= -->
@@ -52,7 +58,7 @@
 
   <h2>Messages</h2>
 
-  <!-- 🟢 GUEST INPUT FORM -->
+  <!-- GUEST FORM -->
   <div class="guest-form">
 
     <h3>Leave a Message</h3>
@@ -67,11 +73,10 @@
 
   </div>
 
-  <!-- 🟣 MESSAGES DISPLAY -->
+  <!-- MESSAGES -->
   <div id="messages-grid"></div>
 
 </section>
-
 
 <!-- =========================
      SHARE
@@ -83,14 +88,12 @@
   <button onclick="copyLink()">Copy Link</button>
 </div>
 
-
 <!-- =========================
      LIGHTBOX
 ========================= -->
 <div id="lightbox" class="hidden">
-  <img id="lightbox-img"/>
+  <img id="lightbox-img" alt="Preview image"/>
 </div>
-
 
 <!-- =========================
      MUSIC CONTROLS
@@ -99,18 +102,20 @@
   <button id="music-toggle">🎵</button>
 </div>
 
-
 <!-- =========================
-     SCRIPT
+     MOBILE NAV (APP STYLE)
 ========================= -->
-<script src="js/script.js"></script>
-</div>
-  <div class="mobile-nav">
+<div class="mobile-nav">
   <button onclick="scrollToSection('hero')">🏠</button>
   <button onclick="scrollToSection('gallery-section')">📸</button>
   <button onclick="scrollToSection('messages-section')">💬</button>
   <button onclick="navigator.share ? shareNative() : copyLink()">🔗</button>
 </div>
-  
+
+<!-- =========================
+     SCRIPT
+========================= -->
+<script src="js/script.js"></script>
+
 </body>
 </html>
