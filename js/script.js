@@ -2,192 +2,167 @@ let audio = new Audio();
 let isPlaying = false;
 
 /* =========================
-   LOAD DATA (JSON + optional localStorage override)
+   SUPABASE SETUP
 ========================= */
-fetch("data/site.json")
-  .then(res => res.json())
-  .then(baseData => {
+const supabaseUrl = "YOUR_SUPABASE_URL";
+const supabaseKey = "YOUR_SUPABASE_ANON_KEY";
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    let savedData = JSON.parse(localStorage.getItem("siteData")) || {};
+/* =========================
+   GET SLUG FROM URL
+========================= */
+const params = new URLSearchParams(window.location.search);
+const slug = params.get("slug") || "demo";
 
-    // Merge (dashboard overrides base JSON)
-    const data = {
-      ...baseData,
-      ...savedData,
-      hero: { ...baseData.hero, ...(savedData.hero || {}) },
-      theme: { ...baseData.theme, ...(savedData.theme || {}) },
-      music: { ...baseData.music, ...(savedData.music || {}) },
-      gallery: savedData.gallery || baseData.gallery,
-      messages: savedData.messages || baseData.messages
-    };
+/* =========================
+   LOAD TRIBUTE FROM CLOUD
+========================= */
+async function loadTribute() {
 
-    const root = document.documentElement;
+  const { data, error } = await supabase
+    .from("tributes")
+    .select("*")
+    .eq("slug", slug)
+    .single();
 
-    /* =========================
-       THEME
-    ========================= */
-    if (data.theme) {
-      root.style.setProperty("--primary-color", data.theme.primaryColor);
-      root.style.setProperty("--secondary-color", data.theme.secondaryColor);
-      root.style.setProperty("--accent-color", data.theme.accentColor);
+  if (error || !data) {
+    console.error("No tribute found:", error);
+    return;
+  }
 
-      document.body.style.fontFamily = data.theme.bodyFont || "Poppins";
-    }
+  renderTribute(data);
+}
 
-    /* =========================
-       HERO
-    ========================= */
-    const heroImg = document.getElementById("hero-image");
-    const heroName = document.getElementById("hero-name");
-    const heroDegree = document.getElementById("hero-degree");
-    const heroSchool = document.getElementById("hero-school");
-    const heroYear = document.getElementById("hero-year");
-    const heroQuote = document.getElementById("hero-quote");
-    const heroSection = document.getElementById("hero");
+/* =========================
+   RENDER TRIBUTE
+========================= */
+function renderTribute(data) {
 
-    if (data.hero) {
-      if (heroImg) heroImg.src = data.hero.image || "";
-      if (heroName) heroName.textContent = data.hero.name || "";
-      if (heroDegree) heroDegree.textContent = data.hero.degree || "";
-      if (heroSchool) heroSchool.textContent = data.hero.school || "";
-      if (heroYear) heroYear.textContent = data.hero.year || "";
-      if (heroQuote) heroQuote.textContent = data.hero.quote || "";
+  const root = document.documentElement;
 
-      if (heroSection && data.hero.background) {
-        heroSection.style.backgroundImage = `url(${data.hero.background})`;
-      }
-    }
+  /* THEME */
+  if (data.theme) {
+    root.style.setProperty("--primary-color", data.theme.primaryColor);
+    root.style.setProperty("--secondary-color", data.theme.secondaryColor);
+    root.style.setProperty("--accent-color", data.theme.accentColor);
 
-    /* =========================
-       MUSIC INIT
-    ========================= */
-    const musicControl = document.getElementById("music-control");
+    document.body.style.fontFamily = data.theme.bodyFont || "Poppins";
+  }
 
-    if (data.music && data.music.file) {
-      audio.src = data.music.file;
-      audio.loop = data.music.loop ?? true;
-      audio.volume = data.music.volume ?? 0.5;
+  /* HERO */
+  if (data.hero) {
+    document.getElementById("hero-image").src = data.hero.image || "";
+    document.getElementById("hero-name").textContent = data.hero.name || "";
+    document.getElementById("hero-degree").textContent = data.hero.degree || "";
+    document.getElementById("hero-school").textContent = data.hero.school || "";
+    document.getElementById("hero-year").textContent = data.hero.year || "";
+    document.getElementById("hero-quote").textContent = data.hero.quote || "";
 
-      if (musicControl) {
-        musicControl.classList.remove("hidden");
-      }
-    }
+    document.getElementById("hero").style.backgroundImage =
+      `url(${data.hero.background})`;
+  }
 
-    /* =========================
-       GALLERY
-    ========================= */
-    const galleryGrid = document.getElementById("gallery-grid");
+  /* MUSIC */
+  if (data.music?.file) {
+    audio.src = data.music.file;
+    audio.loop = data.music.loop ?? true;
+    audio.volume = data.music.volume ?? 0.5;
 
-    if (galleryGrid && data.gallery) {
-      data.gallery.forEach(item => {
+    document.getElementById("music-control").classList.remove("hidden");
+  }
 
-        const div = document.createElement("div");
-        div.classList.add("gallery-item");
+  /* GALLERY (from DB) */
+  loadGallery(data.id);
 
-        div.innerHTML = `<img src="${item.src}" alt="gallery">`;
+  /* MESSAGES (from DB) */
+  loadMessages(data.id);
+}
 
-        div.addEventListener("click", () => {
-          const lightbox = document.getElementById("lightbox");
-          const lightboxImg = document.getElementById("lightbox-img");
+/* =========================
+   LOAD GALLERY
+========================= */
+async function loadGallery(tributeId) {
 
-          if (lightbox && lightboxImg) {
-            lightboxImg.src = item.src;
-            lightbox.classList.remove("hidden");
-          }
-        });
+  const { data } = await supabase
+    .from("gallery")
+    .select("*")
+    .eq("tribute_id", tributeId);
 
-        galleryGrid.appendChild(div);
-      });
-    }
+  const galleryGrid = document.getElementById("gallery-grid");
+  galleryGrid.innerHTML = "";
 
-    /* =========================
-       MESSAGES
-    ========================= */
-    const messagesGrid = document.getElementById("messages-grid");
+  data?.forEach(item => {
 
-    if (messagesGrid && data.messages) {
-      data.messages.forEach(msg => {
+    const div = document.createElement("div");
+    div.classList.add("gallery-item");
 
-        const card = document.createElement("div");
-        card.classList.add("message-card");
+    div.innerHTML = `<img src="${item.image_url}">`;
 
-        card.innerHTML = `
-          <img src="${msg.photo || ''}" alt="message">
-          <h3>${msg.name || ''}</h3>
-          <p>${msg.message || ''}</p>
-        `;
+    div.addEventListener("click", () => {
+      document.getElementById("lightbox-img").src = item.image_url;
+      document.getElementById("lightbox").classList.remove("hidden");
+    });
 
-        messagesGrid.appendChild(card);
-      });
-    }
-
-  })
-  .catch(err => {
-    console.error("Failed to load site data:", err);
+    galleryGrid.appendChild(div);
   });
+}
 
+/* =========================
+   LOAD MESSAGES
+========================= */
+async function loadMessages(tributeId) {
+
+  const { data } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("tribute_id", tributeId);
+
+  const messagesGrid = document.getElementById("messages-grid");
+  messagesGrid.innerHTML = "";
+
+  data?.forEach(msg => {
+
+    const card = document.createElement("div");
+    card.classList.add("message-card");
+
+    card.innerHTML = `
+      <img src="${msg.photo_url || ''}">
+      <h3>${msg.name || ''}</h3>
+      <p>${msg.message || ''}</p>
+    `;
+
+    messagesGrid.appendChild(card);
+  });
+}
 
 /* =========================
    MUSIC TOGGLE
 ========================= */
 document.addEventListener("DOMContentLoaded", () => {
 
-  const toggleBtn = document.getElementById("music-toggle");
+  document.getElementById("music-toggle")?.addEventListener("click", () => {
 
-  if (toggleBtn) {
-    toggleBtn.addEventListener("click", () => {
+    if (!audio.src) return;
 
-      if (!audio.src) return;
-
-      if (isPlaying) {
-        audio.pause();
-        isPlaying = false;
-      } else {
-        audio.play().catch(() => {});
-        isPlaying = true;
-      }
-    });
-  }
-
-});
-
-
-/* =========================
-   MUSIC UPLOAD
-========================= */
-document.getElementById("music-upload")?.addEventListener("change", (e) => {
-
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  const url = URL.createObjectURL(file);
-
-  audio.src = url;
-  audio.play().catch(() => {});
-
-  isPlaying = true;
-
-  const musicControl = document.getElementById("music-control");
-  if (musicControl) {
-    musicControl.classList.remove("hidden");
-  }
-
-});
-
-
-/* =========================
-   LIGHTBOX CLOSE
-========================= */
-document.getElementById("lightbox")?.addEventListener("click", () => {
-  document.getElementById("lightbox")?.classList.add("hidden");
-});
-
-
-/* =========================
-   BEGIN JOURNEY SCROLL
-========================= */
-document.getElementById("begin-btn")?.addEventListener("click", () => {
-  document.getElementById("gallery-section")?.scrollIntoView({
-    behavior: "smooth"
+    if (isPlaying) {
+      audio.pause();
+      isPlaying = false;
+    } else {
+      audio.play().catch(() => {});
+      isPlaying = true;
+    }
   });
+
+  document.getElementById("begin-btn")?.addEventListener("click", () => {
+    document.getElementById("gallery-section").scrollIntoView({
+      behavior: "smooth"
+    });
+  });
+
+  document.getElementById("lightbox")?.addEventListener("click", () => {
+    document.getElementById("lightbox").classList.add("hidden");
+  });
+
+  /* START APP */
+  loadTribute();
 });
