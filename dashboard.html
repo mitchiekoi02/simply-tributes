@@ -1,1 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <title>Simply Tributes Dashboard</title>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body style="padding: 20px; background:#111; color:white;">
+
+<h1>🎓 Tribute Dashboard</h1>
+
+<!-- ================= HERO EDIT ================= -->
+<section>
+  <h2>Hero Section</h2>
+
+  <input id="name" placeholder="Name"><br><br>
+  <input id="degree" placeholder="Degree"><br><br>
+  <input id="school" placeholder="School"><br><br>
+  <input id="year" placeholder="Year"><br><br>
+
+  <textarea id="quote" placeholder="Quote"></textarea><br><br>
+
+  <input type="file" id="heroImage"><br><br>
+  <input type="file" id="bgImage"><br><br>
+</section>
+
+<hr>
+
+<!-- ================= GALLERY ================= -->
+<section>
+  <h2>Gallery Upload</h2>
+  <input type="file" id="galleryUpload" multiple><br><br>
+</section>
+
+<hr>
+
+<!-- ================= MUSIC ================= -->
+<section>
+  <h2>Music Upload</h2>
+  <input type="file" id="musicUpload"><br><br>
+</section>
+
+<hr>
+
+<!-- ================= THEME ================= -->
+<section>
+  <h2>Theme</h2>
+
+  <input type="color" id="primaryColor">
+  <input type="color" id="secondaryColor">
+</section>
+
+<br>
+
+<button id="saveBtn">💾 Save Changes</button>
+
+<script src="js/dashboard.js"></script>
+
+</body>
+</html>
