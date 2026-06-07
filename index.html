@@ -1,96 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Simply Tributes</title>
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css"/>
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet"/>
 
-  <!-- Supabase (needed for STEP 4 cloud loading) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
 
-<!-- =========================
-     HERO SECTION
-========================= -->
 <section id="hero">
-
   <div class="overlay"></div>
-
   <div class="hero-content">
 
-    <img id="hero-image" alt="Hero Image">
+    <img id="hero-image" />
 
     <h1 id="hero-name"></h1>
-
     <h2 id="hero-degree"></h2>
-
     <h3 id="hero-school"></h3>
-
     <p id="hero-year"></p>
-
     <blockquote id="hero-quote"></blockquote>
 
     <button id="begin-btn">Begin Journey</button>
 
   </div>
-
 </section>
 
-
-<!-- =========================
-     GALLERY SECTION
-========================= -->
 <section id="gallery-section">
-
-  <h2 class="section-title">Memories</h2>
-
+  <h2>Memories</h2>
   <div id="gallery-grid"></div>
-
 </section>
 
-
-<!-- =========================
-     MESSAGES SECTION
-========================= -->
 <section id="messages-section">
-
-  <h2 class="section-title">Messages From Loved Ones</h2>
-
+  <h2>Messages</h2>
   <div id="messages-grid"></div>
-
 </section>
 
-
-<!-- =========================
-     LIGHTBOX
-========================= -->
-<div id="lightbox" class="hidden">
-  <img id="lightbox-img" alt="Preview">
+<!-- SHARE -->
+<div class="share-container">
+  <button onclick="shareFB()">FB</button>
+  <button onclick="shareX()">X</button>
+  <button onclick="shareWA()">WA</button>
+  <button onclick="copyLink()">Copy</button>
 </div>
 
+<div id="lightbox" class="hidden">
+  <img id="lightbox-img"/>
+</div>
 
-<!-- =========================
-     MUSIC CONTROL
-========================= -->
-<div id="music-control" class="music-control hidden">
+<div id="music-control" class="hidden">
   <button id="music-toggle">🎵</button>
 </div>
 
-<input type="file" id="music-upload" accept="audio/*" hidden />
-
-
-<!-- =========================
-     SCRIPT
-========================= -->
 <script src="js/script.js"></script>
 
 </body>
