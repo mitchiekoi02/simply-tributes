@@ -1,80 +1,103 @@
+
 const supabaseUrl = "https://gzcsahzxpohpuqwbigfn.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6Y3NhaHp4cG9ocHVxd2JpZ2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NzQ4NjcsImV4cCI6MjA5NjM1MDg2N30.RlKKTSZQ-GXVZtg8yG_AdnWtWI2EBWc4ujWhIqydPZc";
+const supabaseKey = "YOUR_ANON_KEY";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-/* =========================
-   LOAD EXISTING DATA
-========================= */
 let siteData = JSON.parse(localStorage.getItem("siteData")) || {};
 
 /* =========================
-   SAVE FUNCTION
+   HELPERS
 ========================= */
-function saveData() {
-  localStorage.setItem("siteData", JSON.stringify(siteData));
-  alert("Saved! Open index.html to see changes.");
+async function uploadFile(bucket, file) {
+
+  const fileName = `${Date.now()}-${file.name}`;
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(fileName, file);
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  const { data } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(fileName);
+
+  return data.publicUrl;
 }
 
 /* =========================
-   HERO FIELDS
+   SAVE TRIBUTE (CLOUD)
 ========================= */
-document.getElementById("name").addEventListener("input", e => {
-  siteData.hero = siteData.hero || {};
-  siteData.hero.name = e.target.value;
-});
+async function saveData() {
 
-document.getElementById("degree").addEventListener("input", e => {
-  siteData.hero.degree = e.target.value;
-});
+  const heroFile = document.getElementById("heroImage")?.files?.[0];
+  const bgFile = document.getElementById("bgImage")?.files?.[0];
+  const musicFile = document.getElementById("musicUpload")?.files?.[0];
+  const galleryFiles = document.getElementById("galleryUpload")?.files || [];
 
-document.getElementById("school").addEventListener("input", e => {
-  siteData.hero.school = e.target.value;
-});
+  let heroImageUrl = siteData.hero?.image || null;
+  let bgUrl = siteData.hero?.background || null;
+  let musicUrl = siteData.music?.file || null;
 
-document.getElementById("year").addEventListener("input", e => {
-  siteData.hero.year = e.target.value;
-});
+  if (heroFile) heroImageUrl = await uploadFile("hero", heroFile);
+  if (bgFile) bgUrl = await uploadFile("hero", bgFile);
+  if (musicFile) musicUrl = await uploadFile("music", musicFile);
 
-document.getElementById("quote").addEventListener("input", e => {
-  siteData.hero.quote = e.target.value;
-});
+  const slug =
+    (siteData.hero?.name || "tribute")
+      .toLowerCase()
+      .replaceAll(" ", "-") +
+    "-" +
+    Math.floor(Math.random() * 9999);
 
-/* =========================
-   IMAGE UPLOADS
-========================= */
-document.getElementById("heroImage").addEventListener("change", e => {
-  const file = e.target.files[0];
-  siteData.hero.image = URL.createObjectURL(file);
-});
+  const payload = {
+    slug,
 
-document.getElementById("bgImage").addEventListener("change", e => {
-  const file = e.target.files[0];
-  siteData.hero.background = URL.createObjectURL(file);
-});
+    hero: {
+      ...siteData.hero,
+      image: heroImageUrl,
+      background: bgUrl
+    },
 
-/* =========================
-   MUSIC UPLOAD
-========================= */
-document.getElementById("musicUpload").addEventListener("change", e => {
-  const file = e.target.files[0];
+    theme: siteData.theme,
+    music: {
+      file: musicUrl,
+      loop: true,
+      volume: 0.5
+    }
+  };
 
-  siteData.music = siteData.music || {};
-  siteData.music.file = URL.createObjectURL(file);
-});
+  const { data, error } = await supabase
+    .from("tributes")
+    .insert([payload])
+    .select()
+    .single();
 
-/* =========================
-   THEME
-========================= */
-document.getElementById("primaryColor").addEventListener("input", e => {
-  siteData.theme = siteData.theme || {};
-  siteData.theme.primaryColor = e.target.value;
-});
+  if (error) {
+    console.error(error);
+    alert("Save failed");
+    return;
+  }
 
-document.getElementById("secondaryColor").addEventListener("input", e => {
-  siteData.theme.secondaryColor = e.target.value;
-});
+  const tributeId = data.id;
 
-/* =========================
-   SAVE BUTTON
-========================= */
-document.getElementById("saveBtn").addEventListener("click", saveData);
+  /* =========================
+     UPLOAD GALLERY
+  ========================= */
+  for (let file of galleryFiles) {
+    const url = await uploadFile("gallery", file);
+
+    await supabase.from("gallery").insert([
+      {
+        tribute_id: tributeId,
+        image_url: url
+      }
+    ]);
+  }
+
+  alert("🎉 Tribute Created!\n\nLink:\n" +
+    window.location.origin + "/index.html?slug=" + slug);
+}
